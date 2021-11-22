@@ -1,102 +1,114 @@
-import React, { createContext, useReducer } from 'react'
-import axios from 'axios'
-import { calcSubPrice, calcTotalPrice, getCountProductsInCart } from '../helpers/cartFunctions'
-export const productsContext = createContext()
+import React, { createContext, useReducer } from "react";
+import axios from "axios";
+import {
+  calcSubPrice,
+  calcTotalPrice,
+  getCountProductsInCart,
+} from "../helpers/cartFunctions";
+export const productsContext = createContext();
 
 const INIT_STATE = {
   products: [],
   currentProduct: {},
   cartLength: getCountProductsInCart(),
-  cart: {}
-}
+  cart: {},
+};
 
 const reducer = (state = INIT_STATE, action) => {
   switch (action.type) {
-    case 'GET_PRODUCTS':
-      return { ...state, products: action.payload }
-    case 'GET_CURRENT_PRODUCT':
-      return { ...state, currentProduct: action.payload }
-    case 'CHANGE_CART_COUNT':
-      return { ...state, cartLength: action.payload }
-    case 'GET_CART':
-      return { ...state, cart: action.payload }
+    case "GET_PRODUCTS":
+      return { ...state, products: action.payload };
+    case "GET_CURRENT_PRODUCT":
+      return { ...state, currentProduct: action.payload };
+    case "CHANGE_CART_COUNT":
+      return { ...state, cartLength: action.payload };
+    case "GET_CART":
+      return { ...state, cart: action.payload };
     default:
-      return state
+      return state;
   }
-}
+};
 
 const ProductsContextProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(reducer, INIT_STATE)
+  const [state, dispatch] = useReducer(reducer, INIT_STATE);
 
   const getProducts = async (params) => {
-    const { data } = await axios(`http://localhost:8000/products?${params}`)
+    const { data } = await axios(
+      `https://shop-kubat.herokuapp.com/api/products?${params}`
+    );
     dispatch({
-      type: 'GET_PRODUCTS',
+      type: "GET_PRODUCTS",
       payload: data,
-    })
-  }
+    });
+  };
 
   const getCurProduct = async (id) => {
-    const { data } = await axios(`http://localhost:8000/products/${id}`)
+    const { data } = await axios(
+      `https://shop-kubat.herokuapp.com/api/products/${id}`
+    );
     dispatch({
-      type: 'GET_CURRENT_PRODUCT',
+      type: "GET_CURRENT_PRODUCT",
       payload: data,
-    })
-  }
+    });
+  };
 
   function addProductToCart(product) {
-    let cart = JSON.parse(localStorage.getItem('cart'));
+    let cart = JSON.parse(localStorage.getItem("cart"));
     if (!cart) {
       cart = {
         products: [],
-        totalPrice: 0
-      }
+        totalPrice: 0,
+      };
     }
     let newProduct = {
       item: product,
       count: 1,
-      subPrice: 0
-    }
+      subPrice: 0,
+    };
     newProduct.subPrice = calcSubPrice(newProduct);
-    let filteredCart = cart.products.filter(elem => elem.item.id === product.id)
+    let filteredCart = cart.products.filter(
+      (elem) => elem.item.id === product.id
+    );
     if (filteredCart.length > 0) {
-      cart.products = cart.products.filter(elem => elem.item.id !== product.id)
+      cart.products = cart.products.filter(
+        (elem) => elem.item.id !== product.id
+      );
     } else {
       cart.products.push(newProduct);
     }
-    cart.totalPrice = calcTotalPrice(cart.products)
+    cart.totalPrice = calcTotalPrice(cart.products);
     localStorage.setItem("cart", JSON.stringify(cart));
     dispatch({
       type: "CHANGE_CART_COUNT",
-      payload: cart.products.length
-    })
+      payload: cart.products.length,
+    });
   }
 
   function getCart() {
-    let cart = JSON.parse(localStorage.getItem('cart'));
+    let cart = JSON.parse(localStorage.getItem("cart"));
     if (!cart) {
       cart = {
         products: [],
-        totalPrice: 0
-      }
+        totalPrice: 0,
+      };
     }
     dispatch({
       type: "GET_CART",
-      payload: cart
-    })
+      payload: cart,
+    });
   }
 
-  function changeProductCount(count, id){
-    let cart = JSON.parse(localStorage.getItem('cart'));
-    cart.products = cart.products.map(elem => {
-      if(elem.item.id === id){
+  function changeProductCount(count, id) {
+    let cart = JSON.parse(localStorage.getItem("cart"));
+    cart.products = cart.products.map((elem) => {
+      if (elem.item.id === id) {
         elem.count = count;
-        elem.subPrice = calcSubPrice(elem)
+        elem.subPrice = calcSubPrice(elem);
       }
-      return elem
-    })
+      return elem;
+    });
     cart.totalPrice = calcTotalPrice(cart.products);
-    localStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.setItem("cart", JSON.stringify(cart));
     getCart();
   }
 
@@ -111,12 +123,12 @@ const ProductsContextProvider = ({ children }) => {
         getCurProduct,
         addProductToCart,
         getCart,
-        changeProductCount
+        changeProductCount,
       }}
     >
       {children}
     </productsContext.Provider>
-  )
-}
+  );
+};
 
-export default ProductsContextProvider
+export default ProductsContextProvider;
